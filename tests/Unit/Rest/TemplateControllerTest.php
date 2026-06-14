@@ -14,6 +14,7 @@ use OmoikaneWorks\SimpleSalesReports\Templates\TemplateService;
 use OmoikaneWorks\SimpleSalesReports\Tests\Unit\Templates\FakeTemplateRepository;
 use OmoikaneWorks\SimpleSalesReports\Tests\Support\CreatesTemplateRows;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -307,6 +308,389 @@ final class TemplateControllerTest extends TestCase {
 
 		$this->assertIsArray( $error_data );
 		$this->assertSame( 500, $error_data['status'] );
+	}
+
+	/**
+	 * Test update item returns updated template.
+	 *
+	 * @return  void
+	 */
+	public function test_update_item_returns_updated_template(): void {
+		$template    = $this->create_template_row(
+			array(
+				'id'           => 10,
+				'template_key' => 'custom_sales_report',
+				'name'         => 'Custom Sales Report',
+				'content'      => 'Hello {{name}}',
+				'is_system'    => false,
+				'is_default'   => false,
+			)
+		);
+		$template_id = (int) $template['id'];
+
+		$repository = new FakeTemplateRepository(
+			array(
+				$template_id => $template,
+			)
+		);
+
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'id', '10' );
+		$request->set_param( 'name', 'Updated Template' );
+		$request->set_param( 'content', '<h1>{{ report.title }}</h1>' );
+
+		$response = $controller->update_item( $request );
+
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$this->assertSame( 200, $response->get_status() );
+
+		$data = $response->get_data();
+
+		$this->assertIsArray( $data );
+		$this->assertArrayHasKey( 'item', $data );
+		$this->assertSame( 10, $data['item']['id'] );
+		$this->assertSame( 'Updated Template', $data['item']['name'] );
+		$this->assertSame( '<h1>{{ report.title }}</h1>', $data['item']['content'] );
+	}
+
+	/**
+	 * Test update item returns error when template is not found.
+	 *
+	 * @return  void
+	 */
+	public function test_update_item_returns_error_when_template_is_not_found(): void {
+		$template    = $this->create_template_row(
+			array(
+				'id'           => 10,
+				'template_key' => 'custom_sales_report',
+				'name'         => 'Custom Sales Report',
+				'content'      => 'Hello {{name}}',
+				'is_system'    => false,
+				'is_default'   => false,
+			)
+		);
+		$template_id = (int) $template['id'];
+
+		$repository = new FakeTemplateRepository(
+			array(
+				$template_id => $template,
+			)
+		);
+
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'id', '999' );
+		$request->set_param( 'name', 'Updated Template' );
+		$request->set_param( 'content', '<h1>{{ report.title }}</h1>' );
+
+		$response = $controller->update_item( $request );
+
+		$this->assertInstanceOf( WP_Error::class, $response );
+		$this->assertSame( 'ossr_template_not_found', $response->get_error_code() );
+
+		$data = $response->get_error_data();
+
+		$this->assertIsArray( $data );
+		$this->assertSame( 404, $data['status'] );
+	}
+
+	/**
+	 * Test update item returns error when template is system template.
+	 *
+	 * @return  void
+	 */
+	public function test_update_item_returns_error_when_template_is_system_template(): void {
+		$template    = $this->create_template_row(
+			array(
+				'id'           => 10,
+				'template_key' => 'default_sales_report',
+				'name'         => 'Default Sales Report',
+				'content'      => 'Hello {{name}}',
+				'is_system'    => true,
+				'is_default'   => true,
+			)
+		);
+		$template_id = (int) $template['id'];
+
+		$repository = new FakeTemplateRepository(
+			array(
+				$template_id => $template,
+			)
+		);
+
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'id', '10' );
+		$request->set_param( 'name', 'Updated Template' );
+		$request->set_param( 'content', '<h1>{{ report.title }}</h1>' );
+
+		$response = $controller->update_item( $request );
+
+		$this->assertInstanceOf( WP_Error::class, $response );
+		$this->assertSame( 'ossr_template_invalid_request', $response->get_error_code() );
+		$this->assertSame( 'System templates cannot be edited.', $response->get_error_message() );
+
+		$data = $response->get_error_data();
+
+		$this->assertIsArray( $data );
+		$this->assertSame( 400, $data['status'] );
+	}
+
+	/**
+	 * Test update item returns error when name already exists.
+	 *
+	 * @return  void
+	 */
+	public function test_update_item_returns_error_when_name_already_exists(): void {
+		$template    = $this->create_template_row(
+			array(
+				'id'           => 10,
+				'template_key' => 'custom_sales_report',
+				'name'         => 'Custom Sales Report',
+				'content'      => 'Hello {{name}}',
+				'is_system'    => false,
+				'is_default'   => false,
+			)
+		);
+		$template_id = (int) $template['id'];
+
+		$repository                     = new FakeTemplateRepository(
+			array(
+				$template_id => $template,
+			)
+		);
+		$repository->name_exists_result = true;
+
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'id', '10' );
+		$request->set_param( 'name', 'Existing Template' );
+		$request->set_param( 'content', '<h1>{{ report.title }}</h1>' );
+
+		$response = $controller->update_item( $request );
+
+		$this->assertInstanceOf( WP_Error::class, $response );
+		$this->assertSame( 'ossr_template_invalid_request', $response->get_error_code() );
+		$this->assertSame( 'Template name already exists.', $response->get_error_message() );
+
+		$data = $response->get_error_data();
+
+		$this->assertIsArray( $data );
+		$this->assertSame( 400, $data['status'] );
+	}
+
+	/**
+	 * Test update item returns error when update fails.
+	 *
+	 * @return  void
+	 */
+	public function test_update_item_returns_error_when_update_fails(): void {
+		$template    = $this->create_template_row(
+			array(
+				'id'           => 10,
+				'template_key' => 'custom_sales_report',
+				'name'         => 'Custom Sales Report',
+				'content'      => 'Hello {{name}}',
+				'is_system'    => false,
+				'is_default'   => false,
+			)
+		);
+		$template_id = (int) $template['id'];
+
+		$repository                = new FakeTemplateRepository(
+			array(
+				$template_id => $template,
+			)
+		);
+		$repository->update_result = false;
+
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'id', '10' );
+		$request->set_param( 'name', 'Custom Sales Report' );
+		$request->set_param( 'content', '<h1>{{ report.title }}</h1>' );
+
+		$response = $controller->update_item( $request );
+
+		$this->assertInstanceOf( WP_Error::class, $response );
+		$this->assertSame( 'ossr_template_update_failed', $response->get_error_code() );
+		$this->assertSame( 'Failed to update template.', $response->get_error_message() );
+
+		$data = $response->get_error_data();
+
+		$this->assertIsArray( $data );
+		$this->assertSame( 500, $data['status'] );
+	}
+
+	/**
+	 * Test delete item returns deleted true.
+	 *
+	 * @return  void
+	 */
+	public function test_delete_item_returns_deleted_true(): void {
+		$template    = $this->create_template_row(
+			array(
+				'id'           => 10,
+				'template_key' => 'custom_sales_report',
+				'name'         => 'Custom Sales Report',
+				'content'      => 'Hello {{name}}',
+				'is_system'    => false,
+				'is_default'   => false,
+			)
+		);
+		$template_id = (int) $template['id'];
+
+		$repository = new FakeTemplateRepository(
+			array(
+				$template_id => $template,
+			)
+		);
+
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'id', '10' );
+
+		$response = $controller->delete_item( $request );
+
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$this->assertSame( 200, $response->get_status() );
+
+		$data = $response->get_data();
+
+		$this->assertIsArray( $data );
+		$this->assertArrayHasKey( 'deleted', $data );
+		$this->assertTrue( $data['deleted'] );
+	}
+
+	/**
+	 * Test delete item returns error when template is not found.
+	 *
+	 * @return  void
+	 */
+	public function test_delete_item_returns_error_when_template_is_not_found(): void {
+		$template    = $this->create_template_row(
+			array(
+				'id'           => 10,
+				'template_key' => 'custom_sales_report',
+				'name'         => 'Custom Sales Report',
+				'content'      => 'Hello {{name}}',
+				'is_system'    => false,
+				'is_default'   => false,
+			)
+		);
+		$template_id = (int) $template['id'];
+
+		$repository = new FakeTemplateRepository(
+			array(
+				$template_id => $template,
+			)
+		);
+
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'id', '999' );
+
+		$response = $controller->delete_item( $request );
+
+		$this->assertInstanceOf( WP_Error::class, $response );
+		$this->assertSame( 'ossr_template_not_found', $response->get_error_code() );
+		$this->assertSame( 'Template not found.', $response->get_error_message() );
+
+		$data = $response->get_error_data();
+
+		$this->assertIsArray( $data );
+		$this->assertSame( 404, $data['status'] );
+	}
+
+	/**
+	 * Test delete item returns error when template is system template.
+	 *
+	 * @return  void
+	 */
+	public function test_delete_item_returns_error_when_template_is_system_template(): void {
+		$template    = $this->create_template_row(
+			array(
+				'id'           => 10,
+				'template_key' => 'custom_sales_report',
+				'name'         => 'Custom Sales Report',
+				'content'      => 'Hello {{name}}',
+				'is_system'    => true,
+				'is_default'   => true,
+			)
+		);
+		$template_id = (int) $template['id'];
+
+		$repository = new FakeTemplateRepository(
+			array(
+				$template_id => $template,
+			)
+		);
+
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'id', '10' );
+
+		$response = $controller->delete_item( $request );
+
+		$this->assertInstanceOf( WP_Error::class, $response );
+		$this->assertSame( 'ossr_template_invalid_request', $response->get_error_code() );
+		$this->assertSame( 'System template cannot be deleted.', $response->get_error_message() );
+
+		$data = $response->get_error_data();
+
+		$this->assertIsArray( $data );
+		$this->assertSame( 400, $data['status'] );
+	}
+
+	/**
+	 * Test delete item returns error when delete fails.
+	 *
+	 * @return  void
+	 */
+	public function test_delete_item_returns_error_when_delete_fails(): void {
+		$template    = $this->create_template_row(
+			array(
+				'id'           => 10,
+				'template_key' => 'custom_sales_report',
+				'name'         => 'Custom Sales Report',
+				'content'      => 'Hello {{name}}',
+				'is_system'    => false,
+				'is_default'   => false,
+			)
+		);
+		$template_id = (int) $template['id'];
+
+		$repository                    = new FakeTemplateRepository(
+			array(
+				$template_id => $template,
+			)
+		);
+		$repository->deactivate_result = false;
+
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'id', '10' );
+
+		$response = $controller->delete_item( $request );
+
+		$this->assertInstanceOf( WP_Error::class, $response );
+		$this->assertSame( 'ossr_template_delete_failed', $response->get_error_code() );
+		$this->assertSame( 'Failed to delete template.', $response->get_error_message() );
+
+		$data = $response->get_error_data();
+
+		$this->assertIsArray( $data );
+		$this->assertSame( 500, $data['status'] );
 	}
 
 	/**

@@ -64,13 +64,46 @@ final class TemplateController {
 			self::NAMESPACE,
 			'/templates/(?P<id>\d+)',
 			array(
-				'methods'             => \WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_item' ),
-				'permission_callback' => array( $this, 'check_permissions' ),
-				'args'                => array(
-					'id' => array(
-						'required'          => true,
-						'validate_callback' => array( $this, 'validate_id' ),
+				array(
+					'methods'             => \WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_item' ),
+					'permission_callback' => array( $this, 'check_permissions' ),
+					'args'                => array(
+						'id' => array(
+							'required'          => true,
+							'validate_callback' => array( $this, 'validate_id' ),
+						),
+					),
+				),
+				array(
+					'methods'             => \WP_REST_Server::EDITABLE,
+					'callback'            => array( $this, 'update_item' ),
+					'permission_callback' => array( $this, 'check_permissions' ),
+					'args'                => array(
+						'id'      => array(
+							'required'          => true,
+							'validate_callback' => array( $this, 'validate_id' ),
+						),
+						'name'    => array(
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'content' => array(
+							'required' => true,
+							'type'     => 'string',
+						),
+					),
+				),
+				array(
+					'methods'             => \WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'delete_item' ),
+					'permission_callback' => array( $this, 'check_permissions' ),
+					'args'                => array(
+						'id' => array(
+							'required'          => true,
+							'validate_callback' => array( $this, 'validate_id' ),
+						),
 					),
 				),
 			)
@@ -231,6 +264,114 @@ final class TemplateController {
 				'item' => $template,
 			),
 			201
+		);
+	}
+
+	/**
+	 * Update template item.
+	 *
+	 * @param   WP_REST_Request $request    Request.
+	 * @return  WP_REST_Response|WP_Error
+	 */
+	public function update_item( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+		$template_id = absint( $request['id'] );
+		$name        = (string) $request->get_param( 'name' );
+		$content     = (string) $request->get_param( 'content' );
+
+		try {
+			$this->template_service->update_template(
+				$template_id,
+				$name,
+				$content
+			);
+		} catch ( \InvalidArgumentException $exception ) {
+			$message = $exception->getMessage();
+
+			if ( 'Template not found.' === $message ) {
+				return new WP_Error(
+					'ossr_template_not_found',
+					'Template not found.',
+					array( 'status' => 404 ),
+				);
+			}
+
+			return new WP_Error(
+				'ossr_template_invalid_request',
+				$message,
+				array( 'status' => 400 )
+			);
+		} catch ( \RuntimeException $exception ) {
+			unset( $exception );
+
+			return new WP_Error(
+				'ossr_template_update_failed',
+				'Failed to update template.',
+				array( 'status' => 500 )
+			);
+		}
+
+		try {
+			$template = $this->template_service->get_template( $template_id );
+		} catch ( \InvalidArgumentException $exception ) {
+			unset( $exception );
+
+			return new WP_Error(
+				'ossr_template_update_failed',
+				'Failed to update template.',
+				array( 'status' => 500 )
+			);
+		}
+
+		return new WP_REST_Response(
+			array(
+				'item' => $template,
+			),
+			200
+		);
+	}
+
+	/**
+	 * Delete template item.
+	 *
+	 * @param   WP_REST_Request $request    Request.
+	 * @return  WP_REST_Response|WP_Error
+	 */
+	public function delete_item( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+		$template_id = absint( $request['id'] );
+
+		try {
+			$this->template_service->delete_template( $template_id );
+		} catch ( \InvalidArgumentException $exception ) {
+			$message = $exception->getMessage();
+
+			if ( 'Template not found.' === $message ) {
+				return new WP_Error(
+					'ossr_template_not_found',
+					'Template not found.',
+					array( 'status' => 404 )
+				);
+			}
+
+			return new WP_Error(
+				'ossr_template_invalid_request',
+				$message,
+				array( 'status' => 400 )
+			);
+		} catch ( \RuntimeException $exception ) {
+			unset( $exception );
+
+			return new WP_Error(
+				'ossr_template_delete_failed',
+				'Failed to delete template.',
+				array( 'status' => 500 )
+			);
+		}
+
+		return new WP_REST_Response(
+			array(
+				'deleted' => true,
+			),
+			200
 		);
 	}
 }

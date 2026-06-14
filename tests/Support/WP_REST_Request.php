@@ -21,6 +21,16 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
 		private array $params = array();
 
 		/**
+		 * Get request parameter.
+		 *
+		 * @param   string $key    Parameter key.
+		 * @return  string|null
+		 */
+		public function get_param( string $key ): ?string {
+			return $this->params[ $key ] ?? null;
+		}
+
+		/**
 		 * Set request parameter.
 		 *
 		 * @param   string $key    Parameter key.
