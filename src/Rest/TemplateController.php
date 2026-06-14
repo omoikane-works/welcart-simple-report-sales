@@ -95,6 +95,17 @@ final class TemplateController {
 						),
 					),
 				),
+				array(
+					'methods'             => \WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'delete_item' ),
+					'permission_callback' => array( $this, 'check_permissions' ),
+					'args'                => array(
+						'id' => array(
+							'required'          => true,
+							'validate_callback' => array( $this, 'validate_id' ),
+						),
+					),
+				),
 			)
 		);
 
@@ -314,6 +325,51 @@ final class TemplateController {
 		return new WP_REST_Response(
 			array(
 				'item' => $template,
+			),
+			200
+		);
+	}
+
+	/**
+	 * Delete template item.
+	 *
+	 * @param   WP_REST_Request $request    Request.
+	 * @return  WP_REST_Response|WP_Error
+	 */
+	public function delete_item( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+		$template_id = absint( $request['id'] );
+
+		try {
+			$this->template_service->delete_template( $template_id );
+		} catch ( \InvalidArgumentException $exception ) {
+			$message = $exception->getMessage();
+
+			if ( 'Template not found.' === $message ) {
+				return new WP_Error(
+					'ossr_template_not_found',
+					'Template not found.',
+					array( 'status' => 404 )
+				);
+			}
+
+			return new WP_Error(
+				'ossr_template_invalid_request',
+				$message,
+				array( 'status' => 400 )
+			);
+		} catch ( \RuntimeException $exception ) {
+			unset( $exception );
+
+			return new WP_Error(
+				'ossr_template_delete_failed',
+				'Failed to delete template.',
+				array( 'status' => 500 )
+			);
+		}
+
+		return new WP_REST_Response(
+			array(
+				'deleted' => true,
 			),
 			200
 		);

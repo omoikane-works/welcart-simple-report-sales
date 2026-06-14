@@ -529,6 +529,171 @@ final class TemplateControllerTest extends TestCase {
 	}
 
 	/**
+	 * Test delete item returns deleted true.
+	 *
+	 * @return  void
+	 */
+	public function test_delete_item_returns_deleted_true(): void {
+		$template    = $this->create_template_row(
+			array(
+				'id'           => 10,
+				'template_key' => 'custom_sales_report',
+				'name'         => 'Custom Sales Report',
+				'content'      => 'Hello {{name}}',
+				'is_system'    => false,
+				'is_default'   => false,
+			)
+		);
+		$template_id = (int) $template['id'];
+
+		$repository = new FakeTemplateRepository(
+			array(
+				$template_id => $template,
+			)
+		);
+
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'id', '10' );
+
+		$response = $controller->delete_item( $request );
+
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$this->assertSame( 200, $response->get_status() );
+
+		$data = $response->get_data();
+
+		$this->assertIsArray( $data );
+		$this->assertArrayHasKey( 'deleted', $data );
+		$this->assertTrue( $data['deleted'] );
+	}
+
+	/**
+	 * Test delete item returns error when template is not found.
+	 *
+	 * @return  void
+	 */
+	public function test_delete_item_returns_error_when_template_is_not_found(): void {
+		$template    = $this->create_template_row(
+			array(
+				'id'           => 10,
+				'template_key' => 'custom_sales_report',
+				'name'         => 'Custom Sales Report',
+				'content'      => 'Hello {{name}}',
+				'is_system'    => false,
+				'is_default'   => false,
+			)
+		);
+		$template_id = (int) $template['id'];
+
+		$repository = new FakeTemplateRepository(
+			array(
+				$template_id => $template,
+			)
+		);
+
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'id', '999' );
+
+		$response = $controller->delete_item( $request );
+
+		$this->assertInstanceOf( WP_Error::class, $response );
+		$this->assertSame( 'ossr_template_not_found', $response->get_error_code() );
+		$this->assertSame( 'Template not found.', $response->get_error_message() );
+
+		$data = $response->get_error_data();
+
+		$this->assertIsArray( $data );
+		$this->assertSame( 404, $data['status'] );
+	}
+
+	/**
+	 * Test delete item returns error when template is system template.
+	 *
+	 * @return  void
+	 */
+	public function test_delete_item_returns_error_when_template_is_system_template(): void {
+		$template    = $this->create_template_row(
+			array(
+				'id'           => 10,
+				'template_key' => 'custom_sales_report',
+				'name'         => 'Custom Sales Report',
+				'content'      => 'Hello {{name}}',
+				'is_system'    => true,
+				'is_default'   => true,
+			)
+		);
+		$template_id = (int) $template['id'];
+
+		$repository = new FakeTemplateRepository(
+			array(
+				$template_id => $template,
+			)
+		);
+
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'id', '10' );
+
+		$response = $controller->delete_item( $request );
+
+		$this->assertInstanceOf( WP_Error::class, $response );
+		$this->assertSame( 'ossr_template_invalid_request', $response->get_error_code() );
+		$this->assertSame( 'System template cannot be deleted.', $response->get_error_message() );
+
+		$data = $response->get_error_data();
+
+		$this->assertIsArray( $data );
+		$this->assertSame( 400, $data['status'] );
+	}
+
+	/**
+	 * Test delete item returns error when delete fails.
+	 *
+	 * @return  void
+	 */
+	public function test_delete_item_returns_error_when_delete_fails(): void {
+		$template    = $this->create_template_row(
+			array(
+				'id'           => 10,
+				'template_key' => 'custom_sales_report',
+				'name'         => 'Custom Sales Report',
+				'content'      => 'Hello {{name}}',
+				'is_system'    => false,
+				'is_default'   => false,
+			)
+		);
+		$template_id = (int) $template['id'];
+
+		$repository                    = new FakeTemplateRepository(
+			array(
+				$template_id => $template,
+			)
+		);
+		$repository->deactivate_result = false;
+
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'id', '10' );
+
+		$response = $controller->delete_item( $request );
+
+		$this->assertInstanceOf( WP_Error::class, $response );
+		$this->assertSame( 'ossr_template_delete_failed', $response->get_error_code() );
+		$this->assertSame( 'Failed to delete template.', $response->get_error_message() );
+
+		$data = $response->get_error_data();
+
+		$this->assertIsArray( $data );
+		$this->assertSame( 500, $data['status'] );
+	}
+
+	/**
 	 * Create controller.
 	 *
 	 * @param array<int, array<string, mixed>> $templates Templates.
