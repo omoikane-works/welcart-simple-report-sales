@@ -141,6 +141,95 @@ final class TemplateControllerTest extends TestCase {
 	}
 
 	/**
+	 * Test create item returns created template.
+	 *
+	 * @return  void
+	 */
+	public function test_create_item_returns_created_template(): void {
+		$repository                = new FakeTemplateRepository();
+		$repository->insert_result = 123;
+
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'name', 'Custom Sales Report' );
+		$request->set_param( 'content', 'Hello {{name}}' );
+
+		$response = $controller->create_item( $request );
+
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$this->assertSame( 201, $response->get_status() );
+
+		$data = $response->get_data();
+
+		$this->assertIsArray( $data );
+		$this->assertArrayHasKey( 'item', $data );
+		$this->assertIsArray( $data['item'] );
+
+		$this->assertSame( 123, $data['item']['id'] );
+		$this->assertSame( 'Custom Sales Report', $data['item']['name'] );
+		$this->assertSame( 'Hello {{name}}', $data['item']['content'] );
+		$this->assertSame( 'sales_report', $data['item']['type'] );
+		$this->assertFalse( $data['item']['is_system'] );
+		$this->assertFalse( $data['item']['is_default'] );
+		$this->assertTrue( $data['item']['is_active'] );
+	}
+
+	/**
+	 * Test create item returns error when name already exists.
+	 *
+	 * @return  void
+	 */
+	public function test_create_item_returns_error_when_name_already_exists(): void {
+		$repository                     = new FakeTemplateRepository();
+		$repository->name_exists_result = true;
+
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'name', 'Custom Sales Report' );
+		$request->set_param( 'content', 'Hello {{name}}' );
+
+		$response = $controller->create_item( $request );
+
+		$this->assertInstanceOf( WP_Error::class, $response );
+		$this->assertSame( 'ossr_template_invalid_request', $response->get_error_code() );
+		$this->assertSame( 'Template name already exists.', $response->get_error_message() );
+
+		$error_data = $response->get_error_data();
+
+		$this->assertIsArray( $error_data );
+		$this->assertSame( 400, $error_data['status'] );
+	}
+
+	/**
+	 * Test create item returns error when create fails.
+	 *
+	 * @return  void
+	 */
+	public function test_create_item_returns_error_when_create_fails(): void {
+		$repository                = new FakeTemplateRepository();
+		$repository->insert_result = -1;
+
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'name', 'Custom Sales Report' );
+		$request->set_param( 'content', 'Hello {{name}}' );
+
+		$response = $controller->create_item( $request );
+
+		$this->assertInstanceOf( WP_Error::class, $response );
+		$this->assertSame( 'ossr_template_create_failed', $response->get_error_code() );
+		$this->assertSame( 'Failed to create template.', $response->get_error_message() );
+
+		$error_data = $response->get_error_data();
+
+		$this->assertIsArray( $error_data );
+		$this->assertSame( 500, $error_data['status'] );
+	}
+
+	/**
 	 * Test duplicate item returns created template item.
 	 *
 	 * @return  void

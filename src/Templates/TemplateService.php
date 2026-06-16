@@ -61,6 +61,47 @@ final class TemplateService {
 	}
 
 	/**
+	 * Create template.
+	 *
+	 * @param   string $name       Template name.
+	 * @param   string $content    Template content.
+	 * @return  int
+	 * @throws  \InvalidArgumentException   Template name already exists.
+	 * @throws  \RuntimeException           Failed to create template.
+	 */
+	public function create_template( string $name, string $content ): int {
+
+		// Check name.
+		$this->validate_name( $name );
+		if ( $this->template_repository->name_exists( $name, null ) ) {
+			throw new \InvalidArgumentException( 'Template name already exists.' );
+		}
+
+		// Check content.
+		$this->validate_content( $content );
+
+		$new_template_id = $this->template_repository->insert(
+			array(
+				'template_key' => $this->generate_template_key(),
+				'name'         => $name,
+				'type'         => TemplateTypes::SALES_REPORT,
+				'content'      => $content,
+				'content_hash' => $this->generate_content_hash( $content ),
+				'version'      => '1.0.0',
+				'is_system'    => false,
+				'is_default'   => false,
+				'is_active'    => true,
+			)
+		);
+
+		if ( 0 >= $new_template_id ) {
+			throw new \RuntimeException( 'Failed to create template.' );
+		}
+
+		return $new_template_id;
+	}
+
+	/**
 	 * Duplicate template.
 	 *
 	 * @param   int    $template_id    Template ID.

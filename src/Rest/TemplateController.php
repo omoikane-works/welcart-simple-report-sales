@@ -54,9 +54,27 @@ final class TemplateController {
 			self::NAMESPACE,
 			'/templates',
 			array(
-				'methods'             => \WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_items' ),
-				'permission_callback' => array( $this, 'check_permissions' ),
+				array(
+					'methods'             => \WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_items' ),
+					'permission_callback' => array( $this, 'check_permissions' ),
+				),
+				array(
+					'methods'             => \WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'create_item' ),
+					'permission_callback' => array( $this, 'check_permissions' ),
+					'args'                => array(
+						'name'    => array(
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'content' => array(
+							'required' => true,
+							'type'     => 'string',
+						),
+					),
+				),
 			)
 		);
 
@@ -204,6 +222,59 @@ final class TemplateController {
 				)
 			);
 		}
+	}
+
+	/**
+	 * Create item.
+	 *
+	 * @param   WP_REST_Request $request    Request.
+	 * @return  WP_REST_Response|WP_Error
+	 */
+	public function create_item( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+		$name    = (string) $request->get_param( 'name' );
+		$content = (string) $request->get_param( 'content' );
+
+		try {
+			$new_template_id = $this->template_service->create_template(
+				$name,
+				$content
+			);
+		} catch ( \InvalidArgumentException $exception ) {
+			$message = $exception->getMessage();
+
+			return new WP_Error(
+				'ossr_template_invalid_request',
+				$message,
+				array( 'status' => 400 )
+			);
+		} catch ( \RuntimeException $exception ) {
+			unset( $exception );
+
+			return new WP_Error(
+				'ossr_template_create_failed',
+				'Failed to create template.',
+				array( 'status' => 500 )
+			);
+		}
+
+		try {
+			$template = $this->template_service->get_template( $new_template_id );
+		} catch ( \InvalidArgumentException $exception ) {
+			unset( $exception );
+
+			return new WP_Error(
+				'ossr_template_create_failed',
+				'Failed to create template.',
+				array( 'status' => 500 )
+			);
+		}
+
+		return new WP_REST_Response(
+			array(
+				'item' => $template,
+			),
+			201
+		);
 	}
 
 	/**
