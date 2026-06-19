@@ -49,7 +49,7 @@ final class AdminPage {
 	 *
 	 * @var string
 	 */
-	private const NONCE_ACTION = 'rssr_view_sales_report';
+	private const NONCE_ACTION = 'ossr_view_sales_report';
 
 	/**
 	 * Nonce name.
