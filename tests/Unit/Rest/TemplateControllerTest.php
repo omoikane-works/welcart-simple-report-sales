@@ -57,19 +57,13 @@ final class TemplateControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function test_get_items_returns_templates(): void {
-		$template    = $this->create_template_row(
-			array(
-				'id'   => 10,
-				'name' => 'Default Sales Report',
-			)
+		$templates = $this->create_template_rows_with_copy_names(
+			10,
+			'Default Sales Report',
+			0
 		);
-		$template_id = (int) $template['id'];
 
-		$controller = $this->create_controller(
-			array(
-				$template_id => $template,
-			)
-		);
+		$controller = $this->create_controller( $templates );
 
 		$response = $controller->get_items();
 
@@ -89,19 +83,13 @@ final class TemplateControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function test_get_item_returns_template(): void {
-		$template    = $this->create_template_row(
-			array(
-				'id'   => 10,
-				'name' => 'Custom Template',
-			)
+		$templates = $this->create_template_rows_with_copy_names(
+			10,
+			'Default Sales Report',
+			0
 		);
-		$template_id = (int) $template['id'];
 
-		$controller = $this->create_controller(
-			array(
-				$template_id => $template,
-			)
-		);
+		$controller = $this->create_controller( $templates );
 
 		$request = new WP_REST_Request();
 		$request->set_param( 'id', '10' );
@@ -115,7 +103,7 @@ final class TemplateControllerTest extends TestCase {
 		$this->assertIsArray( $data );
 		$this->assertArrayHasKey( 'item', $data );
 		$this->assertSame( 10, $data['item']['id'] );
-		$this->assertSame( 'Custom Template', $data['item']['name'] );
+		$this->assertSame( 'Default Sales Report', $data['item']['name'] );
 	}
 
 	/**
@@ -153,7 +141,7 @@ final class TemplateControllerTest extends TestCase {
 
 		$request = new WP_REST_Request();
 		$request->set_param( 'name', 'Custom Sales Report' );
-		$request->set_param( 'content', 'Hello {{name}}' );
+		$request->set_param( 'content', '<h1>{{ report.title }}</h1>' );
 
 		$response = $controller->create_item( $request );
 
@@ -168,7 +156,7 @@ final class TemplateControllerTest extends TestCase {
 
 		$this->assertSame( 123, $data['item']['id'] );
 		$this->assertSame( 'Custom Sales Report', $data['item']['name'] );
-		$this->assertSame( 'Hello {{name}}', $data['item']['content'] );
+		$this->assertSame( '<h1>{{ report.title }}</h1>', $data['item']['content'] );
 		$this->assertSame( 'sales_report', $data['item']['type'] );
 		$this->assertFalse( $data['item']['is_system'] );
 		$this->assertFalse( $data['item']['is_default'] );
@@ -188,7 +176,7 @@ final class TemplateControllerTest extends TestCase {
 
 		$request = new WP_REST_Request();
 		$request->set_param( 'name', 'Custom Sales Report' );
-		$request->set_param( 'content', 'Hello {{name}}' );
+		$request->set_param( 'content', '<h1>{{ report.title }}</h1>' );
 
 		$response = $controller->create_item( $request );
 
@@ -215,7 +203,7 @@ final class TemplateControllerTest extends TestCase {
 
 		$request = new WP_REST_Request();
 		$request->set_param( 'name', 'Custom Sales Report' );
-		$request->set_param( 'content', 'Hello {{name}}' );
+		$request->set_param( 'content', '<h1>{{ report.report.title }}</h1>' );
 
 		$response = $controller->create_item( $request );
 
@@ -235,48 +223,26 @@ final class TemplateControllerTest extends TestCase {
 	 * @return  void
 	 */
 	public function test_duplicate_item_returns_created_template_item(): void {
-		$template    = $this->create_template_row(
-			array(
-				'id'           => 10,
-				'template_key' => 'default_sales_report',
-				'name'         => 'default_sales_report',
-				'content'      => 'Hello {{name}}',
-				'is_system'    => true,
-			)
+		$templates = $this->create_template_rows_with_copy_names(
+			10,
+			'Default Sales Report',
+			0
 		);
-		$template_id = (int) $template['id'];
 
-		$repository                = new FakeTemplateRepository(
-			array(
-				$template_id => $template,
-			)
-		);
+		$repository                = new FakeTemplateRepository( $templates );
 		$repository->insert_result = 123;
 
 		$controller = $this->create_controller_with_repository( $repository );
 
 		$request = new WP_REST_Request();
 		$request->set_param( 'id', '10' );
-		$request->set_param( 'name', 'Custom Sales Report' );
 
 		$response = $controller->duplicate_item( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 201, $response->get_status() );
 
-		$data = $response->get_data();
-
-		$this->assertIsArray( $data );
-		$this->assertArrayHasKey( 'item', $data );
-		$this->assertIsArray( $data['item'] );
-
-		$this->assertSame( 123, $data['item']['id'] );
-		$this->assertSame( 'Custom Sales Report', $data['item']['name'] );
-		$this->assertSame( 'Hello {{name}}', $data['item']['content'] );
-		$this->assertSame( 'sales_report', $data['item']['type'] );
-		$this->assertFalse( $data['item']['is_system'] );
-		$this->assertFalse( $data['item']['is_default'] );
-		$this->assertTrue( $data['item']['is_active'] );
+		$this->assert_response_template_copy( $response, 'Default Sales Report copy' );
 	}
 
 	/**
@@ -285,29 +251,19 @@ final class TemplateControllerTest extends TestCase {
 	 * @return  void
 	 */
 	public function test_duplicate_item_returns_error_when_template_is_not_found(): void {
-		$template    = $this->create_template_row(
-			array(
-				'id'           => 10,
-				'template_key' => 'default_sales_report',
-				'name'         => 'default_sales_report',
-				'content'      => 'Hello {{name}}',
-				'is_system'    => true,
-			)
+		$templates = $this->create_template_rows_with_copy_names(
+			10,
+			'Default Sales Report',
+			0
 		);
-		$template_id = (int) $template['id'];
 
-		$repository                = new FakeTemplateRepository(
-			array(
-				$template_id => $template,
-			)
-		);
+		$repository                = new FakeTemplateRepository( $templates );
 		$repository->insert_result = 123;
 
 		$controller = $this->create_controller_with_repository( $repository );
 
 		$request = new WP_REST_Request();
 		$request->set_param( 'id', '999' );
-		$request->set_param( 'name', 'Custom Sales Report' );
 
 		$response = $controller->duplicate_item( $request );
 
@@ -321,72 +277,109 @@ final class TemplateControllerTest extends TestCase {
 	}
 
 	/**
-	 * Test duplicate item returns error when template name already exists.
-	 *
-	 * @return  void
-	 */
-	public function test_duplicate_item_returns_error_when_name_already_exists(): void {
-		$template    = $this->create_template_row(
-			array(
-				'id'           => 10,
-				'template_key' => 'default_sales_report',
-				'name'         => 'default_sales_report',
-				'content'      => 'Hello {{name}}',
-				'is_system'    => true,
-			)
-		);
-		$template_id = (int) $template['id'];
-
-		$repository                     = new FakeTemplateRepository(
-			array(
-				$template_id => $template,
-			)
-		);
-		$repository->name_exists_result = true;
-
-		$controller = $this->create_controller_with_repository( $repository );
-
-		$request = new WP_REST_Request();
-		$request->set_param( 'id', '10' );
-		$request->set_param( 'name', 'Custom Sales Report' );
-
-		$response = $controller->duplicate_item( $request );
-
-		$this->assertInstanceOf( WP_Error::class, $response );
-		$this->assertSame( 'ossr_template_invalid_request', $response->get_error_code() );
-
-		$error_data = $response->get_error_data();
-
-		$this->assertIsArray( $error_data );
-		$this->assertSame( 400, $error_data['status'] );
-	}
-
-	/**
 	 * Test duplicate item returns error when duplicate fails.
 	 *
 	 * @return  void
 	 */
 	public function test_duplicate_item_returns_error_when_duplicate_fails(): void {
-		$template    = $this->create_template_row(
-			array(
-				'id'      => 10,
-				'content' => 'Hello {{name}}',
-			)
+		$templates = $this->create_template_rows_with_copy_names(
+			10,
+			'Default Sales Report',
+			0
 		);
-		$template_id = (int) $template['id'];
 
-		$repository                = new FakeTemplateRepository(
-			array(
-				$template_id => $template,
-			)
-		);
+		$repository                = new FakeTemplateRepository( $templates );
 		$repository->insert_result = 0;
 
 		$controller = $this->create_controller_with_repository( $repository );
 
 		$request = new WP_REST_Request();
 		$request->set_param( 'id', '10' );
-		$request->set_param( 'name', 'Custom Sales Report' );
+
+		$response = $controller->duplicate_item( $request );
+
+		$this->assertInstanceOf( WP_Error::class, $response );
+		$this->assertSame( 'ossr_template_duplicate_failed', $response->get_error_code() );
+
+		$error_data = $response->get_error_data();
+
+		$this->assertIsArray( $error_data );
+		$this->assertSame( 500, $error_data['status'] );
+	}
+
+	/**
+	 * Test duplicate item generates numbered copy name when copy name exists.
+	 *
+	 * @return  void
+	 */
+	public function test_duplicate_item_generates_numbered_copy_name_when_copy_name_exists(): void {
+		$templates = $this->create_template_rows_with_copy_names(
+			10,
+			'Default Sales Report',
+			1
+		);
+
+		$repository                = new FakeTemplateRepository( $templates );
+		$repository->insert_result = 123;
+
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'id', '10' );
+
+		$response = $controller->duplicate_item( $request );
+
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$this->assertSame( 201, $response->get_status() );
+
+		$this->assert_response_template_copy( $response, 'Default Sales Report copy(1)' );
+	}
+
+	/**
+	 * Test duplicate item generates next numbered copy name.
+	 *
+	 * @return  void
+	 */
+	public function test_duplicate_item_generates_next_numbered_copy_name(): void {
+		$templates = $this->create_template_rows_with_copy_names(
+			10,
+			'Default Sales Report',
+			2
+		);
+
+		$repository                = new FakeTemplateRepository( $templates );
+		$repository->insert_result = 123;
+
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'id', '10' );
+
+		$response = $controller->duplicate_item( $request );
+
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$this->assertSame( 201, $response->get_status() );
+
+		$this->assert_response_template_copy( $response, 'Default Sales Report copy(2)' );
+	}
+
+	/**
+	 * Test duplicate item returns error when unique copy name cannot be generated.
+	 *
+	 * @return  void
+	 */
+	public function test_duplicate_item_returns_error_when_unique_copy_name_cannot_be_generated(): void {
+		$templates = $this->create_template_rows_with_copy_names(
+			10,
+			'Default Sales Report',
+			101
+		);
+
+		$repository = new FakeTemplateRepository( $templates );
+		$controller = $this->create_controller_with_repository( $repository );
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'id', '10' );
 
 		$response = $controller->duplicate_item( $request );
 
@@ -405,24 +398,17 @@ final class TemplateControllerTest extends TestCase {
 	 * @return  void
 	 */
 	public function test_update_item_returns_updated_template(): void {
-		$template    = $this->create_template_row(
+		$templates = $this->create_template_rows_with_copy_names(
+			10,
+			'Default Sales Report',
+			0,
 			array(
-				'id'           => 10,
-				'template_key' => 'custom_sales_report',
-				'name'         => 'Custom Sales Report',
-				'content'      => 'Hello {{name}}',
-				'is_system'    => false,
-				'is_default'   => false,
-			)
-		);
-		$template_id = (int) $template['id'];
-
-		$repository = new FakeTemplateRepository(
-			array(
-				$template_id => $template,
+				'is_system'  => false,
+				'is_default' => false,
 			)
 		);
 
+		$repository = new FakeTemplateRepository( $templates );
 		$controller = $this->create_controller_with_repository( $repository );
 
 		$request = new WP_REST_Request();
@@ -450,24 +436,17 @@ final class TemplateControllerTest extends TestCase {
 	 * @return  void
 	 */
 	public function test_update_item_returns_error_when_template_is_not_found(): void {
-		$template    = $this->create_template_row(
+		$templates = $this->create_template_rows_with_copy_names(
+			10,
+			'Default Sales Report',
+			0,
 			array(
-				'id'           => 10,
-				'template_key' => 'custom_sales_report',
-				'name'         => 'Custom Sales Report',
-				'content'      => 'Hello {{name}}',
-				'is_system'    => false,
-				'is_default'   => false,
-			)
-		);
-		$template_id = (int) $template['id'];
-
-		$repository = new FakeTemplateRepository(
-			array(
-				$template_id => $template,
+				'is_system'  => false,
+				'is_default' => false,
 			)
 		);
 
+		$repository = new FakeTemplateRepository( $templates );
 		$controller = $this->create_controller_with_repository( $repository );
 
 		$request = new WP_REST_Request();
@@ -492,24 +471,13 @@ final class TemplateControllerTest extends TestCase {
 	 * @return  void
 	 */
 	public function test_update_item_returns_error_when_template_is_system_template(): void {
-		$template    = $this->create_template_row(
-			array(
-				'id'           => 10,
-				'template_key' => 'default_sales_report',
-				'name'         => 'Default Sales Report',
-				'content'      => 'Hello {{name}}',
-				'is_system'    => true,
-				'is_default'   => true,
-			)
-		);
-		$template_id = (int) $template['id'];
-
-		$repository = new FakeTemplateRepository(
-			array(
-				$template_id => $template,
-			)
+		$templates = $this->create_template_rows_with_copy_names(
+			10,
+			'Default Sales Report',
+			0
 		);
 
+		$repository = new FakeTemplateRepository( $templates );
 		$controller = $this->create_controller_with_repository( $repository );
 
 		$request = new WP_REST_Request();
@@ -535,23 +503,17 @@ final class TemplateControllerTest extends TestCase {
 	 * @return  void
 	 */
 	public function test_update_item_returns_error_when_name_already_exists(): void {
-		$template    = $this->create_template_row(
+		$templates = $this->create_template_rows_with_copy_names(
+			10,
+			'Default Sales Report',
+			0,
 			array(
-				'id'           => 10,
-				'template_key' => 'custom_sales_report',
-				'name'         => 'Custom Sales Report',
-				'content'      => 'Hello {{name}}',
-				'is_system'    => false,
-				'is_default'   => false,
+				'is_system'  => false,
+				'is_default' => false,
 			)
 		);
-		$template_id = (int) $template['id'];
 
-		$repository                     = new FakeTemplateRepository(
-			array(
-				$template_id => $template,
-			)
-		);
+		$repository                     = new FakeTemplateRepository( $templates );
 		$repository->name_exists_result = true;
 
 		$controller = $this->create_controller_with_repository( $repository );
@@ -579,23 +541,17 @@ final class TemplateControllerTest extends TestCase {
 	 * @return  void
 	 */
 	public function test_update_item_returns_error_when_update_fails(): void {
-		$template    = $this->create_template_row(
+		$templates = $this->create_template_rows_with_copy_names(
+			10,
+			'Default Sales Report',
+			0,
 			array(
-				'id'           => 10,
-				'template_key' => 'custom_sales_report',
-				'name'         => 'Custom Sales Report',
-				'content'      => 'Hello {{name}}',
-				'is_system'    => false,
-				'is_default'   => false,
+				'is_system'  => false,
+				'is_default' => false,
 			)
 		);
-		$template_id = (int) $template['id'];
 
-		$repository                = new FakeTemplateRepository(
-			array(
-				$template_id => $template,
-			)
-		);
+		$repository                = new FakeTemplateRepository( $templates );
 		$repository->update_result = false;
 
 		$controller = $this->create_controller_with_repository( $repository );
@@ -623,24 +579,17 @@ final class TemplateControllerTest extends TestCase {
 	 * @return  void
 	 */
 	public function test_delete_item_returns_deleted_true(): void {
-		$template    = $this->create_template_row(
+		$templates = $this->create_template_rows_with_copy_names(
+			10,
+			'Default Sales Report',
+			0,
 			array(
-				'id'           => 10,
-				'template_key' => 'custom_sales_report',
-				'name'         => 'Custom Sales Report',
-				'content'      => 'Hello {{name}}',
-				'is_system'    => false,
-				'is_default'   => false,
-			)
-		);
-		$template_id = (int) $template['id'];
-
-		$repository = new FakeTemplateRepository(
-			array(
-				$template_id => $template,
+				'is_system'  => false,
+				'is_default' => false,
 			)
 		);
 
+		$repository = new FakeTemplateRepository( $templates );
 		$controller = $this->create_controller_with_repository( $repository );
 
 		$request = new WP_REST_Request();
@@ -664,24 +613,17 @@ final class TemplateControllerTest extends TestCase {
 	 * @return  void
 	 */
 	public function test_delete_item_returns_error_when_template_is_not_found(): void {
-		$template    = $this->create_template_row(
+		$templates = $this->create_template_rows_with_copy_names(
+			10,
+			'Default Sales Report',
+			0,
 			array(
-				'id'           => 10,
-				'template_key' => 'custom_sales_report',
-				'name'         => 'Custom Sales Report',
-				'content'      => 'Hello {{name}}',
-				'is_system'    => false,
-				'is_default'   => false,
-			)
-		);
-		$template_id = (int) $template['id'];
-
-		$repository = new FakeTemplateRepository(
-			array(
-				$template_id => $template,
+				'is_system'  => false,
+				'is_default' => false,
 			)
 		);
 
+		$repository = new FakeTemplateRepository( $templates );
 		$controller = $this->create_controller_with_repository( $repository );
 
 		$request = new WP_REST_Request();
@@ -705,24 +647,13 @@ final class TemplateControllerTest extends TestCase {
 	 * @return  void
 	 */
 	public function test_delete_item_returns_error_when_template_is_system_template(): void {
-		$template    = $this->create_template_row(
-			array(
-				'id'           => 10,
-				'template_key' => 'custom_sales_report',
-				'name'         => 'Custom Sales Report',
-				'content'      => 'Hello {{name}}',
-				'is_system'    => true,
-				'is_default'   => true,
-			)
-		);
-		$template_id = (int) $template['id'];
-
-		$repository = new FakeTemplateRepository(
-			array(
-				$template_id => $template,
-			)
+		$templates = $this->create_template_rows_with_copy_names(
+			10,
+			'Default Sales Report',
+			0
 		);
 
+		$repository = new FakeTemplateRepository( $templates );
 		$controller = $this->create_controller_with_repository( $repository );
 
 		$request = new WP_REST_Request();
@@ -746,23 +677,17 @@ final class TemplateControllerTest extends TestCase {
 	 * @return  void
 	 */
 	public function test_delete_item_returns_error_when_delete_fails(): void {
-		$template    = $this->create_template_row(
+		$templates = $this->create_template_rows_with_copy_names(
+			10,
+			'Default Sales Report',
+			0,
 			array(
-				'id'           => 10,
-				'template_key' => 'custom_sales_report',
-				'name'         => 'Custom Sales Report',
-				'content'      => 'Hello {{name}}',
-				'is_system'    => false,
-				'is_default'   => false,
+				'is_system'  => false,
+				'is_default' => false,
 			)
 		);
-		$template_id = (int) $template['id'];
 
-		$repository                    = new FakeTemplateRepository(
-			array(
-				$template_id => $template,
-			)
-		);
+		$repository                    = new FakeTemplateRepository( $templates );
 		$repository->deactivate_result = false;
 
 		$controller = $this->create_controller_with_repository( $repository );
@@ -806,5 +731,30 @@ final class TemplateControllerTest extends TestCase {
 		return new TemplateController(
 			new TemplateService( $template_repository )
 		);
+	}
+
+	/**
+	 * Assert response template copy.
+	 *
+	 * @param   WP_REST_Response $response      Response.
+	 * @param   string           $expected_name Expected name.
+	 * @return  void
+	 */
+	private function assert_response_template_copy(
+		WP_REST_Response $response,
+		string $expected_name,
+	): void {
+		$data = $response->get_data();
+
+		$this->assertIsArray( $data );
+		$this->assertArrayHasKey( 'item', $data );
+		$this->assertIsArray( $data['item'] );
+
+		$this->assertSame( $expected_name, $data['item']['name'] );
+		$this->assertSame( '<h1>{{ report.title }}</h1>', $data['item']['content'] );
+		$this->assertSame( '1.0.0', $data['item']['version'] );
+		$this->assertFalse( $data['item']['is_system'] );
+		$this->assertFalse( $data['item']['is_default'] );
+		$this->assertTrue( $data['item']['is_active'] );
 	}
 }

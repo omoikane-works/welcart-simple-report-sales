@@ -135,14 +135,9 @@ final class TemplateController {
 				'callback'            => array( $this, 'duplicate_item' ),
 				'permission_callback' => array( $this, 'check_permissions' ),
 				'args'                => array(
-					'id'   => array(
+					'id' => array(
 						'required'          => true,
 						'validate_callback' => array( $this, 'validate_id' ),
-					),
-					'name' => array(
-						'required'          => true,
-						'sanitize_callback' => 'sanitize_text_field',
-						'validate_callback' => array( $this, 'validate_name' ),
 					),
 				),
 			)
@@ -285,13 +280,9 @@ final class TemplateController {
 	 */
 	public function duplicate_item( WP_REST_Request $request ): WP_REST_Response|WP_Error {
 		$template_id = absint( $request['id'] );
-		$name        = (string) $request['name'];
 
 		try {
-			$duplicated_id = $this->template_service->duplicate_template(
-				$template_id,
-				$name
-			);
+			$duplicated_id = $this->template_service->duplicate_template( $template_id );
 		} catch ( \InvalidArgumentException $exception ) {
 			$message = $exception->getMessage();
 
