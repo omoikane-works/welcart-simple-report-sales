@@ -44,6 +44,56 @@ trait CreatesTemplateRows {
 	}
 
 	/**
+	 * Create template rows with copy names.
+	 *
+	 * @param   int    $base_template_id Base template ID.
+	 * @param   string $base_name        Base template name.
+	 * @param   int    $copy_count       Copy row count.
+	 * @param   array  $overrides        Template row overrides.
+	 * @return  array<int, array<string, mixed>>
+	 */
+	private function create_template_rows_with_copy_names(
+		int $base_template_id,
+		string $base_name,
+		int $copy_count,
+		array $overrides = array()
+	): array {
+		$base_template = $this->create_template_row(
+			array_merge(
+				$overrides,
+				array(
+					'id'   => $base_template_id,
+					'name' => $base_name,
+				)
+			)
+		);
+
+		$templates = array(
+			$base_template_id => $base_template,
+		);
+
+		for ( $index = 1; $index <= $copy_count; ++$index ) {
+			$template_id   = $base_template_id + $index;
+			$template_name = ( 1 === $index )
+			? $base_name . ' copy'
+			: sprintf( '%s copy(%d)', $base_name, $index - 1 );
+
+			$templates[ $template_id ] = $this->create_template_row(
+				array_merge(
+					$overrides,
+					array(
+						'id'        => $template_id,
+						'name'      => $template_name,
+						'is_system' => false,
+					)
+				)
+			);
+		}
+
+		return $templates;
+	}
+
+	/**
 	 * Create template rows indexed by ID.
 	 *
 	 * @param   array<int, array<string, mixed>> $templates  Templates.

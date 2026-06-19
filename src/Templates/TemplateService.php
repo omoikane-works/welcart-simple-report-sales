@@ -104,14 +104,15 @@ final class TemplateService {
 	/**
 	 * Duplicate template.
 	 *
-	 * @param   int    $template_id    Template ID.
-	 * @param   string $name           New Template name.
+	 * @param   int $template_id    Template ID.
 	 * @return  int
 	 * @throws  \InvalidArgumentException   Template name already exists.
 	 * @throws  \RuntimeException           Failed to duplicate template.
 	 */
-	public function duplicate_template( int $template_id, string $name ): int {
+	public function duplicate_template( int $template_id ): int {
 		$template = $this->get_template( $template_id );
+
+		$name = $this->generate_copy_name( $template['name'] );
 
 		$this->validate_name( $name );
 
@@ -257,5 +258,39 @@ final class TemplateService {
 	 */
 	private function generate_content_hash( string $content ): string {
 		return hash( 'sha256', $content );
+	}
+
+	/**
+	 * Generate copy name.
+	 *
+	 * @param   string $base_name  Base name.
+	 * @return  string
+	 * @throws  \RuntimeException   Could not generate a unique template name.
+	 */
+	private function generate_copy_name( string $base_name ): string {
+		$copy_name = sprintf(
+			// translators: %s: template name.
+			__( '%s copy', 'omoikane-simple-sales-reports' ),
+			$base_name
+		);
+
+		if ( ! $this->template_repository->name_exists( $copy_name, null ) ) {
+			return $copy_name;
+		}
+
+		for ( $index = 1; $index <= 100; ++$index ) {
+			$candidate = sprintf(
+				// translators: 1: template name, 2: copy number.
+				__( '%1$s copy(%2$d)', 'omoikane-simple-sales-reports' ),
+				$base_name,
+				$index
+			);
+
+			if ( ! $this->template_repository->name_exists( $candidate, null ) ) {
+				return $candidate;
+			}
+		}
+
+		throw new \RuntimeException( 'Could not generate a unique template name.' );
 	}
 }

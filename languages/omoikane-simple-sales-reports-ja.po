@@ -3,9 +3,10 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Omoikane Simple Sales Reports for Welcart 1.0.1\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/omoikane-simple-sales-reports\n"
-"POT-Creation-Date: 2026-06-01T11:52:08+00:00\n"
-"PO-Revision-Date: 2026-06-01 21:28+0900\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/omoikane-simple-"
+"sales-reports\n"
+"POT-Creation-Date: 2026-06-18T22:25:14+00:00\n"
+"PO-Revision-Date: 2026-06-19 07:30+0900\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ja\n"
@@ -41,45 +42,47 @@ msgid "https://github.com/omoikane-works"
 msgstr "https://github.com/omoikane-works"
 
 #. translators: 1: required PHP version, 2: current PHP version.
-#: omoikane-simple-sales-reports.php:50
+#: omoikane-simple-sales-reports.php:51
 #, php-format
 msgid ""
-"Omoikane Simple Sales Reports for Welcart requires PHP version %1$s or later. Your "
-"current PHP version is %2$s."
+"Omoikane Simple Sales Reports for Welcart requires PHP version %1$s or "
+"later. Your current PHP version is %2$s."
 msgstr ""
-"かんたん売上報告書 for Welcart を利用するには PHP %1$s 以上が必要です。現在の PHP バー"
-"ジョンは、%2$s です。"
+"かんたん売上報告書 for Welcart を利用するには PHP %1$s 以上が必要です。現在"
+"の PHP バージョンは、%2$s です。"
 
-#: omoikane-simple-sales-reports.php:71
+#. translators: %s: required Welcart version.
+#: omoikane-simple-sales-reports.php:68
+#, php-format
+msgid "Omoikane Simple Sales Reports for Welcart requires Welcart %s or later."
+msgstr ""
+"かんたん売上報告書 for Welcart を利用するには Welcart %s 以上が必要です。"
+
+#: omoikane-simple-sales-reports.php:88
 msgid "Plugin activation failed."
 msgstr "プラグインの有効化に失敗しました。"
 
-#: omoikane-simple-sales-reports.php:110
+#: omoikane-simple-sales-reports.php:127
 msgid ""
-"Required libraries for Omoikane Simple Sales Reports for Welcart were not found. Please "
-"run composer install."
+"Required libraries for Omoikane Simple Sales Reports for Welcart were not "
+"found. Please run composer install."
 msgstr ""
-"かんたん売上報告書 for Welcart の依存ライブラリが見つかりません。composer install を実行"
-"してください。"
+"かんたん売上報告書 for Welcart の依存ライブラリが見つかりません。composer "
+"install を実行してください。"
 
-#: src/Activation.php:47
-msgid "Omoikane Simple Sales Reports for Welcart requires PHP 8.2 or later."
-msgstr "かんたん売上報告書 for Welcart を利用するには PHP 8.2 以上が必要です。"
-
-#: src/Activation.php:58
-msgid "Omoikane Simple Sales Reports for Welcart requires Welcart to be activated."
+#: src/Activation.php:54
+msgid ""
+"Omoikane Simple Sales Reports for Welcart requires Welcart to be activated."
 msgstr ""
-"かんたん売上報告書 for Welcart を利用するには Welcart が有効化されている必要があります。"
-
-#: src/Activation.php:67
-msgid "Omoikane Simple Sales Reports for Welcart requires Welcart 2.11.10 or later."
-msgstr "かんたん売上報告書 for Welcart を利用するには Welcart v2.11.10 以上が必要です。"
+"かんたん売上報告書 for Welcart を利用するには Welcart が有効化されている必要"
+"があります。"
 
 #: src/Admin/AdminPage.php:168 src/Admin/AdminPage.php:169
 msgid "Simple Reports"
 msgstr "かんたん報告書"
 
-#: src/Admin/AdminPage.php:181 src/Admin/AdminPage.php:182 src/Admin/AdminPage.php:240
+#: src/Admin/AdminPage.php:181 src/Admin/AdminPage.php:182
+#: src/Admin/AdminPage.php:240
 msgid "Sales Reports"
 msgstr "売上報告書"
 
@@ -121,11 +124,11 @@ msgstr "印刷"
 
 #: src/Admin/AdminPage.php:512
 msgid ""
-"If dates or URLs appear when saving as PDF, turn off \"Headers and footers\" in the "
-"print dialog."
+"If dates or URLs appear when saving as PDF, turn off \"Headers and footers\" "
+"in the print dialog."
 msgstr ""
-"PDF保存時に日付やURLが表示される場合は、印刷ダイアログの「ヘッダーとフッター」をオフにし"
-"てください。"
+"PDF保存時に日付やURLが表示される場合は、印刷ダイアログの「ヘッダーとフッ"
+"ター」をオフにしてください。"
 
 #. translators: 1: start date, 2: end date
 #: src/Reports/ReportPeriodResolver.php:165
@@ -133,37 +136,55 @@ msgstr ""
 msgid "%1$s - %2$s"
 msgstr "%1$s ～ %2$s"
 
-#: src/Reports/ReportPeriodResolver.php:166 src/Reports/ReportPeriodResolver.php:167
+#: src/Reports/ReportPeriodResolver.php:166
+#: src/Reports/ReportPeriodResolver.php:167
 msgid "F j, Y"
 msgstr "Y年n月j日"
 
 #. translators: %s: Sales support rate.
-#: src/Reports/SalesReportBuilder.php:378
+#: src/Reports/SalesReportBuilder.php:474
 #, php-format
 msgid ""
-"The sales support fee is calculated by multiplying %s by the amount after applying "
-"discounts to the product total, adding tax, and subtracting used points. Fractions are "
-"rounded up."
+"The sales support fee is calculated by multiplying %s by the amount after "
+"applying discounts to the product total, adding tax, and subtracting used "
+"points. Fractions are rounded up."
 msgstr ""
-"販売支援料は「商品合計から値引きを反映し、消費税を加算後、使用ポイントを差し引いた金額」"
-"に対して %s を乗じ、小数点以下を切り上げて算出しています。"
+"販売支援料は「商品合計から値引きを反映し、消費税を加算後、使用ポイントを差し"
+"引いた金額」に対して %s を乗じ、小数点以下を切り上げて算出しています。"
 
-#: src/Reports/SalesReportBuilder.php:479
+#: src/Reports/SalesReportBuilder.php:575
 msgid "Canceled"
 msgstr "キャンセル"
 
-#: src/Reports/SalesReportBuilder.php:483
+#: src/Reports/SalesReportBuilder.php:579
 msgid "New Order"
 msgstr "新規受付"
 
-#: src/Reports/SalesReportBuilder.php:487
+#: src/Reports/SalesReportBuilder.php:583
 msgid "On Backorder"
 msgstr "取り寄せ中"
 
-#: src/Reports/SalesReportBuilder.php:491
+#: src/Reports/SalesReportBuilder.php:587
 msgid "Shipped"
 msgstr "発送済み"
 
 #: src/Reports/SalesReportRenderer.php:68
 msgid "The sales report template was not found. Please reactivate the plugin."
-msgstr "売上報告書テンプレートが見つかりません。プラグインを再有効化してください。"
+msgstr ""
+"売上報告書テンプレートが見つかりません。プラグインを再有効化してください。"
+
+#. translators: %s: template name.
+#: src/Templates/TemplateService.php:273
+#, php-format
+msgid "%s copy"
+msgstr "%sのコピー"
+
+#. translators: 1: template name, 2: copy number.
+#: src/Templates/TemplateService.php:284
+#, php-format
+msgid "%1$s copy(%2$d)"
+msgstr "%1$sのコピー(%2$d)"
+
+#~ msgid "Omoikane Simple Sales Reports for Welcart requires PHP 8.2 or later."
+#~ msgstr ""
+#~ "かんたん売上報告書 for Welcart を利用するには PHP 8.2 以上が必要です。"

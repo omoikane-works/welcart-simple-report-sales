@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Omoikane Simple Sales Reports for Welcart 1.0.1\n"
+"Project-Id-Version: Omoikane Simple Sales Reports for Welcart 1.0.3\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/omoikane-simple-sales-reports\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-06-01T11:52:08+00:00\n"
+"POT-Creation-Date: 2026-06-18T22:25:14+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: omoikane-simple-sales-reports\n"
@@ -40,29 +40,27 @@ msgid "https://github.com/omoikane-works"
 msgstr ""
 
 #. translators: 1: required PHP version, 2: current PHP version.
-#: omoikane-simple-sales-reports.php:50
+#: omoikane-simple-sales-reports.php:51
 #, php-format
 msgid "Omoikane Simple Sales Reports for Welcart requires PHP version %1$s or later. Your current PHP version is %2$s."
 msgstr ""
 
-#: omoikane-simple-sales-reports.php:71
+#. translators: %s: required Welcart version.
+#: omoikane-simple-sales-reports.php:68
+#, php-format
+msgid "Omoikane Simple Sales Reports for Welcart requires Welcart %s or later."
+msgstr ""
+
+#: omoikane-simple-sales-reports.php:88
 msgid "Plugin activation failed."
 msgstr ""
 
-#: omoikane-simple-sales-reports.php:110
+#: omoikane-simple-sales-reports.php:127
 msgid "Required libraries for Omoikane Simple Sales Reports for Welcart were not found. Please run composer install."
 msgstr ""
 
-#: src/Activation.php:47
-msgid "Omoikane Simple Sales Reports for Welcart requires PHP 8.2 or later."
-msgstr ""
-
-#: src/Activation.php:58
+#: src/Activation.php:54
 msgid "Omoikane Simple Sales Reports for Welcart requires Welcart to be activated."
-msgstr ""
-
-#: src/Activation.php:67
-msgid "Omoikane Simple Sales Reports for Welcart requires Welcart 2.11.10 or later."
 msgstr ""
 
 #: src/Admin/AdminPage.php:168
@@ -128,27 +126,39 @@ msgid "F j, Y"
 msgstr ""
 
 #. translators: %s: Sales support rate.
-#: src/Reports/SalesReportBuilder.php:378
+#: src/Reports/SalesReportBuilder.php:474
 #, php-format
 msgid "The sales support fee is calculated by multiplying %s by the amount after applying discounts to the product total, adding tax, and subtracting used points. Fractions are rounded up."
 msgstr ""
 
-#: src/Reports/SalesReportBuilder.php:479
+#: src/Reports/SalesReportBuilder.php:575
 msgid "Canceled"
 msgstr ""
 
-#: src/Reports/SalesReportBuilder.php:483
+#: src/Reports/SalesReportBuilder.php:579
 msgid "New Order"
 msgstr ""
 
-#: src/Reports/SalesReportBuilder.php:487
+#: src/Reports/SalesReportBuilder.php:583
 msgid "On Backorder"
 msgstr ""
 
-#: src/Reports/SalesReportBuilder.php:491
+#: src/Reports/SalesReportBuilder.php:587
 msgid "Shipped"
 msgstr ""
 
 #: src/Reports/SalesReportRenderer.php:68
 msgid "The sales report template was not found. Please reactivate the plugin."
+msgstr ""
+
+#. translators: %s: template name.
+#: src/Templates/TemplateService.php:273
+#, php-format
+msgid "%s copy"
+msgstr ""
+
+#. translators: 1: template name, 2: copy number.
+#: src/Templates/TemplateService.php:284
+#, php-format
+msgid "%1$s copy(%2$d)"
 msgstr ""
